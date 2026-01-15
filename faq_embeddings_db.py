@@ -31,7 +31,6 @@ import faiss
 import pymorphy2
 
 
-# Initialize pymorphy2 analyzer globally
 _morph_analyzer = None
 
 
@@ -68,25 +67,19 @@ def normalize_text(text: str) -> str:
 
     morph = get_morph_analyzer()
 
-    # Lowercase
     text = text.lower()
 
-    # Extract words (Cyrillic letters, numbers, and basic punctuation)
     words = re.findall(r'[а-яё\w]+', text)
 
-    # Lemmatize each word
     lemmas = []
     for word in words:
-        # Parse word and get normal form (lemma)
         parsed = morph.parse(word)
         if parsed:
             lemma = parsed[0].normal_form
             lemmas.append(lemma)
         else:
-            # If parsing failed, keep original word
             lemmas.append(word)
 
-    # Join and clean up whitespace
     normalized = " ".join(lemmas)
     return normalized.strip()
 
@@ -170,7 +163,6 @@ class FAQEmbeddingsDB:
         self.model: Optional[SentenceTransformer] = None
         self.embedding_dim: int = 384
 
-        # Preload pymorphy2 dictionaries at startup to avoid first-query delay
         logging.info("Preloading pymorphy2 dictionaries...")
         get_morph_analyzer()
 
@@ -244,7 +236,6 @@ class FAQEmbeddingsDB:
 
         logging.info(f"Loaded index with {self.index.ntotal} vectors")
 
-        # Preload model to avoid first-query delay
         logging.info("Preloading sentence transformer model...")
         self._init_model()
         logging.info("Model ready")
@@ -266,7 +257,6 @@ class FAQEmbeddingsDB:
 
         self._init_model()
 
-        # Normalize query text before embedding
         normalized_query = normalize_text(query)
 
         query_embedding = self.model.encode(
@@ -307,7 +297,6 @@ class FAQEmbeddingsDB:
         return None
 
 
-# Build script
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 

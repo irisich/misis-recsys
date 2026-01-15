@@ -76,7 +76,7 @@ def get_faq_questions_keyboard(questions: List[Dict]) -> ReplyKeyboardMarkup:
     """Keyboard with questions from selected block"""
     keyboard = []
     
-    for q in questions[:15]:  # Limit to 15 questions
+    for q in questions[:15]:  
         keyboard.append([KeyboardButton(text=f"❓ {q['question']}")])
     
     keyboard.append([KeyboardButton(text="⬅️ К категориям")])
@@ -121,14 +121,11 @@ async def main():
         logging.error("BOT_TOKEN not found! Create .env file with BOT_TOKEN=your_token")
         return
     
-    # Initialize bot
     bot = Bot(token=config.BOT_TOKEN)
     dp = Dispatcher(storage=MemoryStorage())
     
-    # Initialize FAQ database
     faq_db = FAQEmbeddingsDB(config.FAQ_JSON_PATH)
     
-    # Load or build index
     index_path = Path(config.FAQ_INDEX_PATH)
     if index_path.with_suffix(".index").exists():
         faq_db.load(config.FAQ_INDEX_PATH)
@@ -141,10 +138,8 @@ async def main():
     
     logging.info(f"FAQ database ready: {len(faq_db.items)} questions")
     
-    # Create data directory
     Path("data").mkdir(exist_ok=True)
     
-    # Store current block in user data
     user_current_block: Dict[int, str] = {}
 
     # ========== HANDLERS ==========
@@ -224,7 +219,6 @@ async def main():
         block_name = message.text[2:].strip()
         user_current_block[message.from_user.id] = block_name
         
-        # Get questions for this block
         all_questions = faq_db.get_all_questions()
         block_questions = [q for q in all_questions if q["block"] == block_name]
         
@@ -251,7 +245,6 @@ async def main():
         """Handle FAQ question selection"""
         question_text = message.text[2:].strip()
         
-        # Search for exact match first, then semantic
         results = faq_db.search(question_text, top_k=1)
         
         if results and results[0].score > 0.7:
@@ -289,11 +282,9 @@ async def main():
         """Handle search query in FAQ mode"""
         query = message.text
         
-        # Skip navigation buttons
         if query in ["🏠 В главное меню", "⬅️ К категориям", "🔍 Поиск по FAQ"]:
             return
         
-        # Search in FAQ
         results = faq_db.search(query, top_k=5, score_threshold=0.3)
         
         if results:
@@ -349,21 +340,18 @@ async def main():
         if query == "🏠 В главное меню":
             return
         
-        # Search in FAQ database
         results = faq_db.search(query, top_k=3, score_threshold=0.3)
         
         if results:
             best = results[0]
             
             if best.score > 0.75:
-                # High confidence - give direct answer
                 response = (
                     f"💬 *На ваш вопрос:*\n_{query}_\n\n"
                     f"✅ *Нашёл ответ:*\n{best.item.answer}\n\n"
                     f"📁 _{best.item.block}_"
                 )
             else:
-                # Lower confidence - show similar questions
                 response = f"💬 *На ваш вопрос:*\n_{query}_\n\n"
                 response += "🤔 *Возможно, вам подойдут эти ответы:*\n\n"
                 
@@ -371,7 +359,6 @@ async def main():
                     response += f"{i}. *{r.item.question}*\n"
                     response += f"   {r.item.answer[:150]}{'...' if len(r.item.answer) > 150 else ''}\n\n"
         else:
-            # No results - generic response
             responses = [
                 f"По вашему вопросу *«{query}»* я не нашёл точного ответа в базе FAQ.\n\n"
                 "Рекомендую обратиться в учебную часть или деканат вашего факультета.",
